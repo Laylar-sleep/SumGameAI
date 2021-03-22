@@ -43,11 +43,11 @@ class Board:
 
     def getSum(self, hand):
         comb = combinations(hand, 3)
-        print("current hand is: " + str(hand))
+        print("    current hand is: " + str(hand))
         # one of the players wins
         sum = []
-        tmp = 0
         for i in list(comb):
+            tmp = 0
             for j in i:
                 tmp += j
             sum.append(tmp)
@@ -56,7 +56,7 @@ class Board:
 
 
     def wins(self, player):
-        print("check win " + str(player))
+        print("  check win " + str(player))
         hand = []
         hand = self.getHand(player)
 
@@ -77,31 +77,32 @@ class Board:
 
     def defend(self):
         print("check defend")
-        hand = self.getHand(self.mover)
-        handOp = self.getHand(not self.mover)
+        hand = self.getHand(not self.mover)
+        handOp = self.getHand(self.mover)
         newMove = hand[len(hand)-1]
         handOp.append(newMove)
-        if self.wins(not self.mover):
+        if self.wins(self.mover):
             handOp.pop()
             return True
         handOp.pop()
         return False
 
     def finished(self):
-        print("check finished")
         if self.wins(self.mover) or self.wins(not self.mover) or self.draw(self.move):
             return True
         return False
 
-    def getScore(self):
-        print("get score" + str(self.mover))
+    def getScore(self, depth):
+
         if self.wins(self.mover):
-            return -100
+            print("  "+str(self.mover) + " not mover wins " + str(-100+depth))
+            return -100 + depth
         elif self.wins(not self.mover):
-            return 100
+            print("  "+str(not self.mover) + " mover wins " + str(100-depth))
+            return 100 - depth
         # elif self.defend():
-        #     return -50
-        return 0
+        #     return -50 + depth
+        return 50-depth
 
     def take_move(self, newMove):
         # update new game board
@@ -118,20 +119,19 @@ class Board:
 
         return newBoard
 
-
 # ab negamax algorithm
 def abnegamax(board, maxDepth, currentDepth, alpha, beta):
-    print("ab negamax")
     # check if resursing is done
     if board.finished() or (maxDepth == currentDepth):
-        finalScore = board.getScore()
-        if finalScore == -100:
-            finalScore = finalScore + currentDepth
-        elif finalScore == 100:
-            finalScore = finalScore - currentDepth
+        finalScore = board.getScore(currentDepth)
+        # if finalScore == -100:
+        #     finalScore = finalScore + currentDepth
+        # elif finalScore == 100:
+        #     finalScore = finalScore - currentDepth
+        print("!return " + str(finalScore))
         return finalScore, None
 
-    bestMove = []
+    bestMove = None
     bestScore = -INFINITY
 
     # go through each move
@@ -148,19 +148,24 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
                                                      -max(alpha, bestScore))
         currentScore = -recursedScore
 
-        # test
-
-        # print("current move is: " + str(currentMove))
-        print("current score is: " + str(currentScore))
+        # if currentScore < -80:
+        #     print("current move is: " + str(currentMove) + " defend")
+        #     return -currentDepth, currentMove
 
         # Update the best score
         if currentScore > bestScore:
             bestScore = currentScore
             bestMove = newMove
+            # If we're outside the bounds, then prune: exit immediately
+            if bestScore >= beta:
+                return bestScore, bestMove
 
-        # If we're outside the bounds, then prune: exit immediately
-        if bestScore >= beta:
-            return bestScore, bestMove
+        # test
+        print("Depth --- " + str(currentDepth) + str(board.move))
+        print("current move is: " + str(currentMove))
+        print("current score is: " + str(currentScore))
+        print("best score is: " + str(bestScore))
+        print("best move is: " + str(bestMove))
 
     return bestScore, bestMove
 
