@@ -1,104 +1,166 @@
-import sys
+
 from itertools import combinations
 
 INFINITY = 99999999
 
-number_taken = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-rest_num = []
-move = []
-move1 = []
-move2 = []
 
-# def find_sum(arr):
-#     arr.sort()
-#     print(arr)
-#     res = []
-#     dfs(arr, 14, 0, res, [])
-#     return res
+class Board:
+    def __init__(self, arr):
+        self.number_taken = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.rest_num = []
+        self.move = []
+        self.move1 = []
+        self.move2 = []
+        self.n = 0
+        self.mover = 0
+        # initialize moves already made
+        self.n = int(arr[0])
+        for i in range(self.n):
+            self.move.append(int(arr[i + 1]))
+            self.number_taken[self.move[i]] = 1
+            if i % 2 == 0:
+                self.move1.append(int(arr[i + 1]))
+            else:
+                self.move2.append(int(arr[i + 1]))
 
-# def dfs(self, nums, target, index, res, path):
-#     if target < 0:
-#         return
-#     elif target == 0:
-#         if len(path) == 3:
-#             res.append(path)
-#         return
-#     for i in range(index, len(nums)):
-#         if i > index and nums[i] == nums[i - 1]:
-#             continue
-#         self.dfs(nums, target - nums[i], i + 1, res, path + [nums[i]])
+        # initialize available moves
+        for i in range(9):
+            if (self.number_taken[i] == 0):
+                self.rest_num.append(i)
 
-def wins(move):
-    comb = combinations(move, 3)
-    sum = 0
-    # one of the players wins
-    for i in list(comb):
-        for j in i:
-            sum += j
-        if sum == 14:
+        # set mover
+        if self.n % 2 == 0:
+            self.mover = 1 # player two
+        else:
+            self.mover = 0 # player one
+
+    def getHand(self, player):
+        if player == 0:
+            hand = self.move1
+        else:
+            hand = self.move2
+        return hand
+
+    def getSum(self, hand):
+        comb = combinations(hand, 3)
+        print("current hand is: " + str(hand))
+        # one of the players wins
+        sum = []
+        tmp = 0
+        for i in list(comb):
+            for j in i:
+                tmp += j
+            sum.append(tmp)
+
+        return sum
+
+
+    def wins(self, player):
+        print("check win " + str(player))
+        hand = []
+        hand = self.getHand(player)
+
+        if len(hand) < 3:
+            return False
+        sum = self.getSum(hand)
+        for i in sum:
+            if i == 14:
+                return True
+        return False
+
+    def draw(self, moves):
+        # draw game
+        if len(moves) == 9:
             return True
-    return False
+        else:
+            return False
 
-def draw(moves):
-    # draw game
-    totalSum = 0
-    for i in moves:
-        totalSum += i
-    if totalSum == 36:
-        return True
-    return False
+    def defend(self):
+        print("check defend")
+        hand = self.getHand(self.mover)
+        handOp = self.getHand(not self.mover)
+        newMove = hand[len(hand)-1]
+        handOp.append(newMove)
+        if self.wins(not self.mover):
+            handOp.pop()
+            return True
+        handOp.pop()
+        return False
 
-def finished(hand1, hand2, moves):
-    if wins(hand1) or wins(hand2) or draw(moves):
-        return True
-    return False
+    def finished(self):
+        print("check finished")
+        if self.wins(self.mover) or self.wins(not self.mover) or self.draw(self.move):
+            return True
+        return False
 
-def getScore(player, oppo):
-    if wins(player):
-        return 100
-    elif wins(oppo):
-        return -100
-    return 0
+    def getScore(self):
+        print("get score" + str(self.mover))
+        if self.wins(self.mover):
+            return -100
+        elif self.wins(not self.mover):
+            return 100
+        # elif self.defend():
+        #     return -50
+        return 0
+
+    def take_move(self, newMove):
+        # update new game board
+        arr = []
+        newCount = self.n +1
+        arr.append(newCount)
+        arr = arr + self.move
+        arr.append(newMove)
+        newBoard = Board(arr)
+
+        # test
+        # print("moves: " + str(newBoard.move))
+        # print("available moves: " + str(newBoard.rest_num))
+
+        return newBoard
 
 
 # ab negamax algorithm
 def abnegamax(board, maxDepth, currentDepth, alpha, beta):
+    print("ab negamax")
+    # check if resursing is done
     if board.finished() or (maxDepth == currentDepth):
-        score = board.getScore() - currentDepth
-        return score, None
+        finalScore = board.getScore()
+        if finalScore == -100:
+            finalScore = finalScore + currentDepth
+        elif finalScore == 100:
+            finalScore = finalScore - currentDepth
+        return finalScore, None
 
     bestMove = []
     bestScore = -INFINITY
 
-    legal_moves = board.get_legal_moves()
+    # go through each move
+    legal_moves = board.rest_num
+
     for newMove in legal_moves:
         newBoard = board.take_move(newMove)
         recursedScore = 0
         currentScore = 0
         currentMove = None
 
-        # calculate the bestscore for the newstate and store
-        if board.isMover() == newBoard.isMover():
-            (recursedScore, currentMove) = abnegamax(newBoard, maxDepth, currentDepth + 1, max(alpha, bestScore), beta)
-            currentScore = recursedScore
-        else:
-            (recursedScore, currentMove) = abnegamax(newBoard, maxDepth, currentDepth + 1, -beta,
+        # Recurse
+        recursedScore, currentMove = abnegamax(newBoard, maxDepth, currentDepth + 1, -beta,
                                                      -max(alpha, bestScore))
-            currentScore = -recursedScore
+        currentScore = -recursedScore
+
+        # test
+
+        # print("current move is: " + str(currentMove))
+        print("current score is: " + str(currentScore))
 
         # Update the best score
         if currentScore > bestScore:
             bestScore = currentScore
-            bestMove = []
-            bestMove.append(move)
+            bestMove = newMove
 
         # If we're outside the bounds, then prune: exit immediately
         if bestScore >= beta:
             return bestScore, bestMove
-
-        # store all the moves with the same score
-        if currentScore == bestScore:
-            bestMove.append(move)
 
     return bestScore, bestMove
 
@@ -106,37 +168,24 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
 if __name__ == '__main__':
     # get input
     arr = input().split()
-    n = int(arr[0])
-
-    # initialize moves already made
-    for i in range(n):
-        move.append(int(arr[i + 1]))
-        number_taken[move[i]] = 1
-        if i % 2 == 0:
-            move1.append(int(arr[i + 1]))
-        else:
-            move2.append(int(arr[i + 1]))
-
-    # initialize available moves
-    for i in range(9):
-        if (number_taken[i] == 0):
-            rest_num.append(i)
+    board = Board(arr)
 
     # add the best choice into move list
-    # my_move = -1
-    # if (my_move >= 0):
-    #     move.append(my_move)
-    #     n = n + 1
+    my_score, my_move = abnegamax(board, 2, 0, -INFINITY, INFINITY)
+    if (my_move >= 0):
+        board.move.append(my_move)
+        board.n = board.n + 1
 
     # output the result
-    # output = str(n)
-    # for i in range(n):
-    #     output = output + " " + str(move[i])
-    # print(output)
+    output = str(board.n)
+    for i in range(board.n):
+        output = output + " " + str(board.move[i])
+    print(output)
 
     #test
-    result = finished(move1, move2, move)
-    print(move1)
-    print(move2)
-    print(result)
+    # result = finished(move1, move2, move)
+    # print(board.move1)
+    # print(board.move2)
+    # print(board.number_taken)
+    # print(board.rest_num)
 
