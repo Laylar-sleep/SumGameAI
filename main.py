@@ -10,6 +10,10 @@ class Board:
         self.move = []
         self.move1 = []
         self.move2 = []
+        self.sum1 = []
+        self.sum2 = []
+        self.win1 = False
+        self.win2 = False
         self.n = 0
         self.mover = 0
         # initialize moves already made
@@ -33,6 +37,24 @@ class Board:
         else:
             self.mover = 0 # player one
 
+        # get sum
+        comb = combinations(self.move1, 3)
+        for i in list(comb):
+            tmp = 0
+            for j in i:
+                tmp += j
+            self.sum1.append(tmp)
+        comb = combinations(self.move2, 3)
+        for i in list(comb):
+            tmp = 0
+            for j in i:
+                tmp += j
+            self.sum2.append(tmp)
+
+        # get win
+        self.win1 = self.wins(0)
+        self.win2 = self.wins(1)
+
     def getHand(self, player):
         if player == 0:
             hand = self.move1
@@ -40,26 +62,20 @@ class Board:
             hand = self.move2
         return hand
 
-    def getSum(self, hand):
-        comb = combinations(hand, 3)
-        sum = []
-        for i in list(comb):
-            tmp = 0
-            for j in i:
-                tmp += j
-            sum.append(tmp)
-
-        return sum
+    def getSum(self, player):
+        if player == 0:
+            return self.sum1
+        else:
+            return self.sum2
 
 
     def wins(self, player):
-        # print("  check win " + str(player))
         hand = []
         hand = self.getHand(player)
 
         if len(hand) < 3:
             return False
-        sum = self.getSum(hand)
+        sum = self.getSum(player)
         for i in sum:
             if i == 14:
                 return True
@@ -73,16 +89,15 @@ class Board:
             return False
 
     def finished(self):
-        if self.wins(self.mover) or self.wins(not self.mover) or self.draw(self.move):
+        if self.win1 or self.win2 or self.draw(self.move):
             return True
         return False
 
     def getScore(self, depth):
 
         if self.wins(self.mover):
-            # print("  "+str(self.mover) + " mover wins " + str(-100+depth))
             return -100 + depth
-        return 50-depth
+        return 50 - depth
 
     def take_move(self, newMove):
         # update new game board
@@ -92,10 +107,6 @@ class Board:
         arr = arr + self.move
         arr.append(newMove)
         newBoard = Board(arr)
-
-        # test
-        # print("moves: " + str(newBoard.move))
-        # print("available moves: " + str(newBoard.rest_num))
 
         return newBoard
 
@@ -128,9 +139,9 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
             bestScore = currentScore
             bestMove = newMove
 
-        # If we're outside the bounds, then prune: exit immediately
-        if bestScore >= beta:
-            return bestScore, bestMove
+            # If we're outside the bounds, then prune: exit immediately
+            if bestScore >= beta:
+                return bestScore, bestMove
 
     return bestScore, bestMove
 
