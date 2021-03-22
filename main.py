@@ -1,8 +1,7 @@
-
+import time
 from itertools import combinations
 
 INFINITY = 99999999
-
 
 class Board:
     def __init__(self, arr):
@@ -43,8 +42,6 @@ class Board:
 
     def getSum(self, hand):
         comb = combinations(hand, 3)
-        print("    current hand is: " + str(hand))
-        # one of the players wins
         sum = []
         for i in list(comb):
             tmp = 0
@@ -56,7 +53,7 @@ class Board:
 
 
     def wins(self, player):
-        print("  check win " + str(player))
+        # print("  check win " + str(player))
         hand = []
         hand = self.getHand(player)
 
@@ -75,18 +72,6 @@ class Board:
         else:
             return False
 
-    def defend(self):
-        print("check defend")
-        hand = self.getHand(not self.mover)
-        handOp = self.getHand(self.mover)
-        newMove = hand[len(hand)-1]
-        handOp.append(newMove)
-        if self.wins(self.mover):
-            handOp.pop()
-            return True
-        handOp.pop()
-        return False
-
     def finished(self):
         if self.wins(self.mover) or self.wins(not self.mover) or self.draw(self.move):
             return True
@@ -95,19 +80,14 @@ class Board:
     def getScore(self, depth):
 
         if self.wins(self.mover):
-            print("  "+str(self.mover) + " not mover wins " + str(-100+depth))
+            # print("  "+str(self.mover) + " mover wins " + str(-100+depth))
             return -100 + depth
-        elif self.wins(not self.mover):
-            print("  "+str(not self.mover) + " mover wins " + str(100-depth))
-            return 100 - depth
-        # elif self.defend():
-        #     return -50 + depth
         return 50-depth
 
     def take_move(self, newMove):
         # update new game board
         arr = []
-        newCount = self.n +1
+        newCount = self.n + 1
         arr.append(newCount)
         arr = arr + self.move
         arr.append(newMove)
@@ -124,11 +104,6 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
     # check if resursing is done
     if board.finished() or (maxDepth == currentDepth):
         finalScore = board.getScore(currentDepth)
-        # if finalScore == -100:
-        #     finalScore = finalScore + currentDepth
-        # elif finalScore == 100:
-        #     finalScore = finalScore - currentDepth
-        print("!return " + str(finalScore))
         return finalScore, None
 
     bestMove = None
@@ -148,24 +123,14 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
                                                      -max(alpha, bestScore))
         currentScore = -recursedScore
 
-        # if currentScore < -80:
-        #     print("current move is: " + str(currentMove) + " defend")
-        #     return -currentDepth, currentMove
-
         # Update the best score
         if currentScore > bestScore:
             bestScore = currentScore
             bestMove = newMove
-            # If we're outside the bounds, then prune: exit immediately
-            if bestScore >= beta:
-                return bestScore, bestMove
 
-        # test
-        print("Depth --- " + str(currentDepth) + str(board.move))
-        print("current move is: " + str(currentMove))
-        print("current score is: " + str(currentScore))
-        print("best score is: " + str(bestScore))
-        print("best move is: " + str(bestMove))
+        # If we're outside the bounds, then prune: exit immediately
+        if bestScore >= beta:
+            return bestScore, bestMove
 
     return bestScore, bestMove
 
@@ -173,10 +138,11 @@ def abnegamax(board, maxDepth, currentDepth, alpha, beta):
 if __name__ == '__main__':
     # get input
     arr = input().split()
+    time_start = time.time()
     board = Board(arr)
 
     # add the best choice into move list
-    my_score, my_move = abnegamax(board, 2, 0, -INFINITY, INFINITY)
+    my_score, my_move = abnegamax(board, 9, 0, -INFINITY, INFINITY)
     if (my_move >= 0):
         board.move.append(my_move)
         board.n = board.n + 1
@@ -185,12 +151,7 @@ if __name__ == '__main__':
     output = str(board.n)
     for i in range(board.n):
         output = output + " " + str(board.move[i])
+    time_end = time.time()
+    print('time cost', time_end - time_start, 's')
     print(output)
-
-    #test
-    # result = finished(move1, move2, move)
-    # print(board.move1)
-    # print(board.move2)
-    # print(board.number_taken)
-    # print(board.rest_num)
 
